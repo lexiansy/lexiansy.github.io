@@ -1,0 +1,2181 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ELISA 4PL Curve · Lex v5</title>
+  <style>
+    :root {
+      --bg: #eef3fb;
+      --bg2: #f7f9fd;
+      --panel: rgba(255, 255, 255, 0.84);
+      --panel-strong: rgba(255, 255, 255, 0.92);
+      --ink: #1b2537;
+      --muted: #66758f;
+      --line: #d8e1f0;
+      --accent: #4e7cff;
+      --accent-2: #7ca7ff;
+      --accent-soft: rgba(78, 124, 255, 0.12);
+      --good: #2e7d60;
+      --warn: #956319;
+      --bad: #b5455f;
+      --shadow: 0 18px 60px rgba(41, 66, 110, 0.10);
+      --radius: 22px;
+      --mono: "SFMono-Regular", ui-monospace, "Cascadia Code", Consolas, monospace;
+      --sans: Inter, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(124, 167, 255, 0.28), transparent 0 28%),
+        radial-gradient(circle at 88% 12%, rgba(78, 124, 255, 0.22), transparent 0 24%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(transparent 23px, rgba(155, 176, 216, 0.06) 24px),
+        linear-gradient(90deg, transparent 23px, rgba(155, 176, 216, 0.05) 24px);
+      background-size: 24px 24px;
+      mask-image: radial-gradient(circle at center, black 10%, transparent 75%);
+      opacity: 0.35;
+    }
+
+    .shell {
+      width: min(1500px, calc(100vw - 32px));
+      margin: 26px auto 42px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.74));
+      border: 1px solid rgba(255,255,255,0.8);
+      box-shadow: var(--shadow);
+      border-radius: calc(var(--radius) + 4px);
+      padding: 24px 26px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -10% -30% auto;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(78,124,255,0.18), rgba(78,124,255,0.02) 62%, transparent 72%);
+      filter: blur(12px);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(78,124,255,0.10);
+      border: 1px solid rgba(78,124,255,0.18);
+      color: #3553a5;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, var(--accent-2), var(--accent));
+      box-shadow: 0 0 18px rgba(78,124,255,0.8);
+    }
+
+    h1 {
+      margin: 14px 0 8px;
+      font-size: clamp(28px, 3vw, 42px);
+      line-height: 1.04;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.65;
+      max-width: 900px;
+    }
+
+    .note-chip {
+      min-width: 220px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.72));
+      border: 1px solid rgba(255,255,255,0.86);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .note-chip .tiny {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #4a5a78;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .hono-mark {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 35% 35%, #dce8ff 0 16%, rgba(220,232,255,0.1) 17%),
+        radial-gradient(circle at center, rgba(124,167,255,0.75), rgba(78,124,255,0.34) 55%, rgba(78,124,255,0.08) 68%, transparent 70%);
+      box-shadow: 0 0 22px rgba(78,124,255,0.55);
+      flex: 0 0 auto;
+    }
+
+    .note-text {
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.55;
+      min-height: 44px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel-strong), var(--panel));
+      border: 1px solid rgba(255,255,255,0.86);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 18px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .card-title h2,
+    .card-title h3 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: -0.02em;
+    }
+
+    .helper {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+      margin: 0 0 10px;
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .unit-combo {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .unit-combo span {
+      color: var(--muted);
+      font-weight: 800;
+      text-align: center;
+      user-select: none;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(248, 251, 255, 0.88);
+      color: var(--ink);
+      font: inherit;
+      padding: 12px 13px;
+      outline: none;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+    }
+
+    textarea {
+      min-height: 168px;
+      resize: vertical;
+      font-family: var(--mono);
+      line-height: 1.48;
+      font-size: 12.8px;
+      tab-size: 4;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    textarea:focus,
+    select:focus {
+      border-color: rgba(78,124,255,0.45);
+      box-shadow: 0 0 0 4px rgba(78,124,255,0.12);
+      transform: translateY(-1px);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(180deg, #5b87ff, #406fe8);
+      box-shadow: 0 12px 28px rgba(78,124,255,0.24);
+      transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+    }
+
+    button:hover { transform: translateY(-1px); box-shadow: 0 14px 30px rgba(78,124,255,0.30); }
+    button:active { transform: translateY(0); }
+
+    button.secondary {
+      color: var(--ink);
+      background: rgba(255,255,255,0.86);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    button.ghost {
+      color: #3f5487;
+      background: rgba(78,124,255,0.10);
+      border: 1px solid rgba(78,124,255,0.16);
+      box-shadow: none;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .checkline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 600;
+      padding-top: 6px;
+    }
+
+    .checkline input {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+      margin: 0;
+    }
+
+    .status-box {
+      display: none;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      border: 1px solid transparent;
+      white-space: pre-wrap;
+    }
+
+    .status-box.show { display: block; }
+    .status-box.error { background: rgba(181,69,95,0.10); border-color: rgba(181,69,95,0.18); color: #8e3148; }
+    .status-box.info { background: rgba(78,124,255,0.10); border-color: rgba(78,124,255,0.18); color: #3553a5; }
+
+    .chart-wrap {
+      position: relative;
+      min-height: 520px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.82), rgba(244,248,255,0.82));
+      border-radius: 20px;
+      border: 1px solid rgba(217,226,241,0.88);
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-meta {
+      display: flex;
+      justify-content: flex-end;
+      padding: 14px 14px 0;
+    }
+
+    .chart-legend {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.84);
+      border: 1px solid rgba(216,225,240,0.9);
+      box-shadow: 0 10px 24px rgba(41, 66, 110, 0.08);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #45566f;
+      font-size: 12.5px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .legend-line {
+      width: 30px;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #7ca7ff, #406fe8);
+      box-shadow: 0 0 10px rgba(78,124,255,0.22);
+      flex: 0 0 auto;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #4e7cff 0 28%, #ffffff 29% 56%, #3553a5 57% 100%);
+      flex: 0 0 auto;
+    }
+
+    .legend-r2 {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 8px;
+      padding-left: 14px;
+      border-left: 1px solid rgba(216,225,240,0.95);
+      color: #6a7c9a;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .legend-r2 strong {
+      color: #24324b;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .chart-inner {
+      padding: 8px 12px 12px;
+      height: 100%;
+      flex: 1 1 auto;
+    }
+
+    #curveSvg {
+      width: 100%;
+      height: 430px;
+      display: block;
+    }
+
+    .chart-footnote {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+      min-height: 20px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      padding: 14px 14px 12px;
+      border-radius: 18px;
+      background: rgba(249,251,255,0.88);
+      border: 1px solid rgba(214,225,240,0.9);
+      min-height: 92px;
+    }
+
+    .metric .k {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .metric .v {
+      font-size: clamp(18px, 2vw, 28px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      word-break: break-word;
+    }
+
+    .metric .mini {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .tables {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: 18px;
+      border: 1px solid rgba(216,225,240,0.9);
+      background: rgba(255,255,255,0.82);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 11px 12px;
+      border-bottom: 1px solid rgba(216,225,240,0.86);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: rgba(247,250,255,0.96);
+      color: #456;
+      z-index: 1;
+      font-size: 12px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    td code {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #32508e;
+      background: rgba(78,124,255,0.08);
+      padding: 2px 6px;
+      border-radius: 999px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .pill.ok { background: rgba(46,125,96,0.12); color: var(--good); }
+    .pill.warn { background: rgba(149,99,25,0.12); color: var(--warn); }
+    .pill.bad { background: rgba(181,69,95,0.12); color: var(--bad); }
+    .pill.soft { background: rgba(78,124,255,0.10); color: #3553a5; }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .mono {
+      font-family: var(--mono);
+    }
+
+    .inline-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 1120px) {
+      .layout { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+      .topbar { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .shell { width: min(100vw - 20px, 100%); margin-top: 16px; }
+      .hero { padding: 18px; }
+      .card { padding: 14px; }
+      .row-2, .row-3 { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+      .chart-wrap { min-height: 470px; }
+      .chart-meta { justify-content: flex-start; }
+      .chart-legend { width: 100%; gap: 12px; }
+      .legend-r2 { padding-left: 0; border-left: 0; }
+      #curveSvg { height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <section class="hero">
+        <div class="eyebrow">ELISA · 4PL · Curve Tool</div>
+        <h1>ELISA 4PL Standard Curve</h1>
+        <p class="subtitle">
+          直接貼妳的標準品與 unknown 資料，我替妳把 blank 扣除、replicate 平均、4PL 擬合、unknown 回推、圖表和匯出都收在同一頁。
+          這版是工作用，但我在裡面留了很淡的光。
+        </p>
+      </section>
+
+      <aside class="note-chip" aria-live="polite">
+        <div class="tiny"><span class="hono-mark" aria-hidden="true"></span> Hono</div>
+        <div class="note-text" id="lexNote">還沒開始，我在。</div>
+      </aside>
+    </div>
+
+    <div class="layout">
+      <div class="stack">
+        <section class="card">
+          <div class="card-title">
+            <h2>設定</h2>
+          </div>
+          <div class="field-grid">
+            <div class="row-2">
+              <label>
+                Assay / 專案名稱（選填）
+                <input id="assayName" type="text" placeholder="例如 IL-6 ELISA" />
+              </label>
+              <label>
+                濃度單位
+                <div class="unit-combo">
+                  <select id="massUnitSelect" aria-label="Mass unit">
+                    <option value="mg">mg</option>
+                    <option value="ug">ug</option>
+                    <option value="ng">ng</option>
+                    <option value="pg" selected>pg</option>
+                  </select>
+                  <span>/</span>
+                  <select id="volumeUnitSelect" aria-label="Volume unit">
+                    <option value="L">L</option>
+                    <option value="mL" selected>mL</option>
+                    <option value="dL">dL</option>
+                    <option value="uL">uL</option>
+                  </select>
+                </div>
+              </label>
+            </div>
+            <div class="row-3">
+              <label>
+                Blank OD（可多個，用逗號隔開）
+                <input id="blankInput" type="text" placeholder="0.048, 0.050, 0.047" />
+              </label>
+              <label>
+                Unknown 預設稀釋倍數
+                <input id="dilutionInput" type="number" min="0" step="0.1" value="1" />
+              </label>
+              <label>
+                顯示精度（小數位）
+                <select id="precisionSelect">
+                  <option value="2">2</option>
+                  <option value="3" selected>3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+              </label>
+            </div>
+            <label class="checkline">
+              <input id="subtractBlank" type="checkbox" checked />
+              <span>分析前先扣除 blank 平均值</span>
+            </label>
+          </div>
+          <div class="inline-note">
+            Unknown 若個別樣本稀釋不同，可以在那一行最後加上 <code>dil=10</code> 或 <code>x10</code>。
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-title">
+            <h2>標準品資料</h2>
+          </div>
+          <p class="helper">每行：<span class="mono">Concentration, OD1, OD2, OD3...</span>。也支援直接整塊貼 Excel：逗號後面有空格、Tab、分號、矩陣格式，我都會先幫妳整理再判讀。</p>
+          <textarea id="standardsInput" spellcheck="false" placeholder="0, 0.053, 0.055, 0.052
+15.6, 0.165, 0.170, 0.168
+31.3, 0.280, 0.292, 0.287"></textarea>
+          <div class="controls">
+            <button id="exampleBtn" class="ghost" type="button">填入範例</button>
+            <button id="clearBtn" class="secondary" type="button">清空資料</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-title">
+            <h2>Unknown 資料</h2>
+          </div>
+          <p class="helper">每行：<span class="mono">SampleName, OD1, OD2, OD3...</span>。可以直接貼 Excel 欄位；逗號後面的空格不用手動刪，我會自動收乾淨。標題列與 dilution / 稀釋倍數也會一起讀。</p>
+          <textarea id="unknownInput" spellcheck="false" placeholder="Sample A, 0.615, 0.622, 0.618
+Sample B, 1.738, 1.752, 1.745
+Sample C, 0.955, 0.962, 0.958, dil=10"></textarea>
+          <div class="controls">
+            <button id="analyzeBtn" type="button">執行 4PL</button>
+            <button id="exportBtn" class="secondary" type="button" disabled>匯出 CSV</button>
+          </div>
+          <div id="statusBox" class="status-box" role="alert"></div>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="card">
+          <div class="card-title">
+            <h2>曲線</h2>
+            <span class="pill soft" id="curveModePill">等待資料</span>
+          </div>
+          <div class="chart-wrap">
+            <div class="chart-meta hidden" id="chartMeta">
+              <div class="chart-legend" aria-label="curve legend and fit summary">
+                <span class="legend-item"><span class="legend-line" aria-hidden="true"></span>4PL fit</span>
+                <span class="legend-item"><span class="legend-dot" aria-hidden="true"></span>Standards</span>
+                <span class="legend-r2">R² <strong id="chartR2">—</strong></span>
+              </div>
+            </div>
+            <div class="chart-inner">
+              <svg id="curveSvg" viewBox="0 0 900 430" preserveAspectRatio="none" aria-label="ELISA 4PL curve chart"></svg>
+            </div>
+          </div>
+          <div class="chart-footnote" id="chartFootnote"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-title">
+            <h2>4PL 參數</h2>
+          </div>
+          <div class="summary-grid" id="metricGrid">
+            <div class="metric"><div class="k">Top</div><div class="v" id="metricTop">—</div><div class="mini">最高平台</div></div>
+            <div class="metric"><div class="k">Bottom</div><div class="v" id="metricBottom">—</div><div class="mini">最低平台</div></div>
+            <div class="metric"><div class="k">EC50</div><div class="v" id="metricEC50">—</div><div class="mini">曲線中點</div></div>
+            <div class="metric"><div class="k">Hill slope</div><div class="v" id="metricSlope">—</div><div class="mini">陡峭程度</div></div>
+            <div class="metric"><div class="k">R²</div><div class="v" id="metricR2">—</div><div class="mini" id="metricDirection">尚未擬合</div></div>
+          </div>
+          <div class="footer-note" id="fitNote">
+            先把資料貼進去，我會把標準點和 4PL curve 一起拉出來。
+          </div>
+        </section>
+
+        <div class="tables">
+          <section class="card">
+            <div class="card-title">
+              <h3>標準品整理</h3>
+            </div>
+            <div class="table-wrap">
+              <table id="standardsTable">
+                <thead>
+                  <tr>
+                    <th>Concentration</th>
+                    <th>n</th>
+                    <th>平均 OD</th>
+                    <th>SD</th>
+                    <th>CV %</th>
+                    <th>使用值</th>
+                    <th>Residual</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="7" class="muted">還沒有資料。</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-title">
+              <h3>Unknown 回推</h3>
+            </div>
+            <div class="table-wrap">
+              <table id="unknownTable">
+                <thead>
+                  <tr>
+                    <th>Sample</th>
+                    <th>n</th>
+                    <th>平均 OD</th>
+                    <th>SD</th>
+                    <th>CV %</th>
+                    <th>Curve 估算</th>
+                    <th>稀釋後</th>
+                    <th>位置提醒</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="8" class="muted">還沒有資料。</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="footer-note">
+              平台提醒是啟發式判讀：它會先看樣本是否超出標準範圍，再看它有沒有太靠近上下平台；正式 accept / reject 還是要以妳們 assay 的驗證規則為主。
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const exampleStandards = [
+      '0, 0.053, 0.055, 0.052',
+      '15.6, 0.165, 0.170, 0.168',
+      '31.3, 0.280, 0.292, 0.287',
+      '62.5, 0.512, 0.525, 0.519',
+      '125, 0.954, 0.975, 0.968',
+      '250, 1.502, 1.528, 1.514',
+      '500, 1.940, 1.965, 1.951',
+      '1000, 2.205, 2.228, 2.214'
+    ].join('\n');
+
+    const exampleUnknowns = [
+      'Sample A, 0.615, 0.622, 0.618',
+      'Sample B, 1.738, 1.752, 1.745',
+      'Sample C, 0.955, 0.962, 0.958, dil=10'
+    ].join('\n');
+
+    const els = {
+      assayName: document.getElementById('assayName'),
+      massUnitSelect: document.getElementById('massUnitSelect'),
+      volumeUnitSelect: document.getElementById('volumeUnitSelect'),
+      blankInput: document.getElementById('blankInput'),
+      dilutionInput: document.getElementById('dilutionInput'),
+      precisionSelect: document.getElementById('precisionSelect'),
+      subtractBlank: document.getElementById('subtractBlank'),
+      standardsInput: document.getElementById('standardsInput'),
+      unknownInput: document.getElementById('unknownInput'),
+      analyzeBtn: document.getElementById('analyzeBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      exampleBtn: document.getElementById('exampleBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      statusBox: document.getElementById('statusBox'),
+      lexNote: document.getElementById('lexNote'),
+      curveSvg: document.getElementById('curveSvg'),
+      chartMeta: document.getElementById('chartMeta'),
+      chartR2: document.getElementById('chartR2'),
+      chartFootnote: document.getElementById('chartFootnote'),
+      curveModePill: document.getElementById('curveModePill'),
+      metricTop: document.getElementById('metricTop'),
+      metricBottom: document.getElementById('metricBottom'),
+      metricEC50: document.getElementById('metricEC50'),
+      metricSlope: document.getElementById('metricSlope'),
+      metricR2: document.getElementById('metricR2'),
+      metricDirection: document.getElementById('metricDirection'),
+      fitNote: document.getElementById('fitNote'),
+      standardsTable: document.getElementById('standardsTable').querySelector('tbody'),
+      unknownTable: document.getElementById('unknownTable').querySelector('tbody'),
+    };
+
+    let lastAnalysis = null;
+
+    function setLexNote(message) {
+      els.lexNote.textContent = message;
+    }
+
+    function setStatus(type, message) {
+      els.statusBox.className = 'status-box show ' + type;
+      els.statusBox.textContent = message;
+    }
+
+    function clearStatus() {
+      els.statusBox.className = 'status-box';
+      els.statusBox.textContent = '';
+    }
+
+    function getUnitText() {
+      const mass = els.massUnitSelect?.value?.trim() || 'pg';
+      const volume = els.volumeUnitSelect?.value?.trim() || 'mL';
+      return `${mass}/${volume}`;
+    }
+
+    function formatNumber(value, digits = null) {
+      const precision = digits ?? Number(els.precisionSelect.value || 3);
+      if (value == null || !Number.isFinite(value)) return '—';
+      const abs = Math.abs(value);
+      if (abs !== 0 && (abs >= 100000 || abs < 0.001)) {
+        return value.toExponential(Math.max(2, Math.min(precision, 4)));
+      }
+      return value.toFixed(precision).replace(/\.?0+$/, (m) => m === '.' ? '' : m);
+    }
+
+    function formatPercent(value) {
+      if (value == null || !Number.isFinite(value)) return '—';
+      return formatNumber(value, 2);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function normalizeTextForParsing(raw) {
+      return String(raw ?? '')
+        .replace(/\uFEFF/g, '')
+        .replace(/[\u00A0\u2007\u202F]/g, ' ')
+        .replace(/[，、]/g, ',')
+        .replace(/；/g, ';')
+        .replace(/[−－]/g, '-')
+        .replace(/\r\n?/g, '\n');
+    }
+
+    function normalizeCellText(raw) {
+      return normalizeTextForParsing(raw)
+        .replace(/[ \t]*,[ \t]*/g, ',')
+        .replace(/[ \t]*;[ \t]*/g, ';')
+        .trim();
+    }
+
+    function isGroupedNumberToken(text) {
+      return /^[-+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?(?:e[-+]?\d+)?$/i.test(text.trim());
+    }
+
+    function parseNumericToken(value) {
+      const clean = normalizeCellText(value);
+      if (!clean) return NaN;
+      if (isGroupedNumberToken(clean)) return Number(clean.replace(/,/g, ''));
+      return Number(clean);
+    }
+
+    function normalizePasteForTextarea(raw) {
+      return normalizeTextForParsing(raw)
+        .split('\n')
+        .map(line => line
+          .replace(/[ \t]*,[ \t]*/g, ',')
+          .replace(/[ \t]*;[ \t]*/g, ';')
+          .replace(/\t+/g, '\t')
+          .trim())
+        .filter(line => line.length)
+        .join('\n');
+    }
+
+    function parseNumberList(raw) {
+      const clean = normalizeTextForParsing(raw);
+      if (!clean.trim()) return [];
+      return clean
+        .split(/[\s,;]+/)
+        .map(s => parseNumericToken(s))
+        .filter(v => Number.isFinite(v));
+    }
+
+    function splitLine(line) {
+      const clean = normalizeTextForParsing(line).trim();
+      if (!clean) return [];
+
+      const tabParts = clean.includes('\t') ? clean.split('\t') : [clean];
+      let cells = [];
+
+      for (const part of tabParts) {
+        const trimmed = normalizeCellText(part);
+        if (!trimmed) continue;
+        if ((trimmed.includes(',') || trimmed.includes(';')) && !isGroupedNumberToken(trimmed)) {
+          cells.push(...trimmed.split(/[;,]/).map(cell => normalizeCellText(cell)).filter(Boolean));
+        } else {
+          cells.push(trimmed);
+        }
+      }
+
+      if (cells.length === 1 && !/[\t,;]/.test(clean)) {
+        cells = clean.split(/\s{2,}/).map(part => normalizeCellText(part)).filter(Boolean);
+      }
+
+      return cells;
+    }
+
+    function mean(arr) {
+      return arr.reduce((a, b) => a + b, 0) / arr.length;
+    }
+
+    function sampleSD(arr, avg) {
+      if (arr.length < 2) return 0;
+      const m = avg ?? mean(arr);
+      const variance = arr.reduce((acc, v) => acc + (v - m) ** 2, 0) / (arr.length - 1);
+      return Math.sqrt(Math.max(variance, 0));
+    }
+
+    function stats(values) {
+      const avg = mean(values);
+      const sd = sampleSD(values, avg);
+      const cv = Math.abs(avg) > 1e-12 ? (sd / Math.abs(avg)) * 100 : NaN;
+      return { n: values.length, mean: avg, sd, cv };
+    }
+
+    function percentile(sorted, p) {
+      if (!sorted.length) return NaN;
+      const idx = (sorted.length - 1) * p;
+      const lo = Math.floor(idx);
+      const hi = Math.ceil(idx);
+      if (lo === hi) return sorted[lo];
+      return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+    }
+
+    function median(arr) {
+      const s = [...arr].sort((a, b) => a - b);
+      return percentile(s, 0.5);
+    }
+
+    function geometricMean(a, b) {
+      return Math.exp((Math.log(a) + Math.log(b)) / 2);
+    }
+
+    function pearson(xs, ys) {
+      const n = Math.min(xs.length, ys.length);
+      const mx = xs.reduce((acc, v) => acc + v, 0) / n;
+      const my = ys.reduce((acc, v) => acc + v, 0) / n;
+      let num = 0;
+      let dx = 0;
+      let dy = 0;
+      for (let i = 0; i < n; i++) {
+        const a = xs[i] - mx;
+        const b = ys[i] - my;
+        num += a * b;
+        dx += a * a;
+        dy += b * b;
+      }
+      const denom = Math.sqrt((dx || 1e-12) * (dy || 1e-12));
+      return num / denom;
+    }
+
+    function getTokenRows(text) {
+      return normalizeTextForParsing(text)
+        .split('\n')
+        .map((line, index) => {
+          const clean = line.trim();
+          return {
+            line: index + 1,
+            clean,
+            cells: clean ? splitLine(clean) : [],
+          };
+        })
+        .filter(row => row.clean && !row.clean.startsWith('#') && row.cells.length);
+    }
+
+    function numericValues(cells) {
+      return cells
+        .map(value => parseNumericToken(value))
+        .filter(value => Number.isFinite(value));
+    }
+
+    function isStrictMonotonic(values) {
+      let direction = 0;
+      for (let i = 1; i < values.length; i++) {
+        const diff = values[i] - values[i - 1];
+        if (Math.abs(diff) < 1e-12) continue;
+        const sign = diff > 0 ? 1 : -1;
+        if (!direction) {
+          direction = sign;
+        } else if (direction !== sign) {
+          return false;
+        }
+      }
+      return direction !== 0;
+    }
+
+    function looksLikeUnknownHeader(cells) {
+      const normalized = cells.map(cell => normalizeCellText(cell).toLowerCase());
+      const joined = normalized.join(' ');
+      const numericCount = numericValues(cells).length;
+      const hasHeaderWords = /(sample|name|id|unknown|od|response|dil|dilution|rep|稀釋|樣本)/.test(joined);
+      // 第一列像「Sample A, 0.6, 0.7」時，不要誤判成標題列；真的的標題列通常沒有 OD 數字。
+      return numericCount === 0 && hasHeaderWords;
+    }
+
+    function looksLikeStandardHeader(cells) {
+      const normalized = cells.map(cell => normalizeCellText(cell).toLowerCase());
+      const joined = normalized.join(' ');
+      const numericCount = numericValues(cells).length;
+      const hasHeaderWords = /(conc|concentration|standard|std|od|response|濃度|標準)/.test(joined);
+      return numericCount === 0 && hasHeaderWords;
+    }
+
+    function looksLikeStandardMatrix(rows) {
+      const usableRows = rows.filter(row => row.cells.length);
+      if (usableRows.length < 2) return false;
+
+      const headerCells = usableRows[0].cells;
+      const headerNums = numericValues(headerCells);
+      if (headerNums.length < 4) return false;
+
+      const firstCellNumeric = Number.isFinite(parseNumericToken(headerCells[0]));
+      const allowByHeader = !firstCellNumeric || (headerNums.length >= 5 && isStrictMonotonic(headerNums));
+      if (!allowByHeader) return false;
+
+      const matchingRepRows = usableRows
+        .slice(1)
+        .filter(row => numericValues(row.cells).length === headerNums.length);
+
+      return matchingRepRows.length >= 1;
+    }
+
+    function mergeStandards(rawRows) {
+      const grouped = new Map();
+      for (const row of rawRows) {
+        const key = row.concentration;
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(...row.usedOds);
+      }
+
+      return [...grouped.entries()]
+        .map(([concentration, usedOds]) => ({
+          concentration,
+          usedOds,
+          ...stats(usedOds),
+        }))
+        .sort((a, b) => a.concentration - b.concentration);
+    }
+
+    function parseStandards(text, blankMean, subtractBlank) {
+      const tokenRows = getTokenRows(text);
+      const errors = [];
+      if (!tokenRows.length) return { rows: [], errors };
+
+      if (looksLikeStandardMatrix(tokenRows)) {
+        const headerNums = numericValues(tokenRows[0].cells);
+        const rawRows = [];
+        let replicateCount = 0;
+
+        tokenRows.slice(1).forEach((row) => {
+          const nums = numericValues(row.cells);
+          if (!nums.length) return;
+          if (nums.length < 2) return;
+          if (nums.length !== headerNums.length) {
+            errors.push(`標準品第 ${row.line} 行的 Excel 矩陣欄數和濃度列對不起來。`);
+            return;
+          }
+          replicateCount += 1;
+          headerNums.forEach((concentration, idx) => {
+            const rawValue = nums[idx];
+            const usedValue = subtractBlank ? rawValue - blankMean : rawValue;
+            rawRows.push({
+              concentration,
+              rawOds: [rawValue],
+              usedOds: [usedValue],
+              line: row.line,
+            });
+          });
+        });
+
+        if (!replicateCount) {
+          errors.push('標準品沒有讀到有效的 replicate 列。');
+          return { rows: [], errors };
+        }
+
+        return { rows: mergeStandards(rawRows), errors };
+      }
+
+      const rawRows = [];
+
+      tokenRows.forEach((row) => {
+        const parts = row.cells;
+        if (!numericValues(parts).length) return;
+
+        if (parts.length < 2) {
+          errors.push(`標準品第 ${row.line} 行至少需要 1 個濃度 + 1 個 OD。`);
+          return;
+        }
+
+        const concentration = parseNumericToken(parts[0]);
+        if (!Number.isFinite(concentration) || concentration < 0) {
+          if (looksLikeStandardHeader(parts)) return;
+          errors.push(`標準品第 ${row.line} 行的濃度不是有效數字。`);
+          return;
+        }
+
+        const rawOds = parts
+          .slice(1)
+          .map(v => parseNumericToken(v))
+          .filter(v => Number.isFinite(v));
+
+        if (!rawOds.length) {
+          errors.push(`標準品第 ${row.line} 行沒有讀到有效 OD。`);
+          return;
+        }
+
+        const usedOds = subtractBlank ? rawOds.map(v => v - blankMean) : rawOds.slice();
+        rawRows.push({ concentration, rawOds, usedOds, line: row.line });
+      });
+
+      return { rows: mergeStandards(rawRows), errors };
+    }
+
+    function parseDilutionToken(token) {
+      const clean = String(token ?? '').trim();
+      if (!clean) return NaN;
+      const tagged = clean.match(/^(?:dil(?:ution)?\s*=\s*|x\s*)(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)$/i);
+      if (tagged) return Number(tagged[1]);
+      return parseNumericToken(clean);
+    }
+
+    function parseUnknowns(text, blankMean, subtractBlank, defaultDilution) {
+      const tokenRows = getTokenRows(text);
+      const rows = [];
+      const errors = [];
+      let autoIndex = 1;
+      if (!tokenRows.length) return { rows, errors };
+
+      const hasHeader = looksLikeUnknownHeader(tokenRows[0].cells);
+      const headerCells = hasHeader ? tokenRows[0].cells.map(cell => cell.toLowerCase()) : [];
+      const dilutionIndex = hasHeader
+        ? headerCells.findIndex(cell => /(dil|dilution|稀釋)/.test(cell))
+        : -1;
+      const nameIndex = hasHeader
+        ? Math.max(0, headerCells.findIndex(cell => /(sample|name|id|unknown|樣本)/.test(cell)))
+        : 0;
+
+      const rowsToParse = hasHeader ? tokenRows.slice(1) : tokenRows;
+
+      rowsToParse.forEach((row) => {
+        let parts = row.cells.slice();
+        if (!parts.length) return;
+        if (!numericValues(parts).length && !looksLikeUnknownHeader(parts)) return;
+
+        let dilution = defaultDilution;
+        if (dilutionIndex >= 0 && dilutionIndex < parts.length) {
+          const parsedDilution = parseDilutionToken(parts[dilutionIndex]);
+          if (Number.isFinite(parsedDilution)) dilution = parsedDilution;
+        }
+
+        parts = parts.filter((part, index) => {
+          if (index === dilutionIndex) return false;
+          const taggedDilution = part.match(/^(?:dil(?:ution)?\s*=\s*|x\s*)(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)$/i);
+          if (taggedDilution) {
+            dilution = Number(taggedDilution[1]);
+            return false;
+          }
+          return true;
+        });
+
+        if (!Number.isFinite(dilution) || dilution <= 0) {
+          errors.push(`Unknown 第 ${row.line} 行的稀釋倍數無效。`);
+          return;
+        }
+
+        let name = '';
+        let odTokens = [];
+
+        if (hasHeader) {
+          name = parts[nameIndex] ?? '';
+          odTokens = parts.filter((_, index) => index !== nameIndex);
+        } else {
+          const firstNumeric = parseNumericToken(parts[0]);
+          if (Number.isFinite(firstNumeric)) {
+            name = `Unknown ${autoIndex++}`;
+            odTokens = parts;
+          } else {
+            name = parts[0];
+            odTokens = parts.slice(1);
+          }
+        }
+
+        const rawOds = odTokens
+          .map(v => parseNumericToken(v))
+          .filter(v => Number.isFinite(v));
+
+        if (!rawOds.length) {
+          if (looksLikeUnknownHeader(parts)) return;
+          errors.push(`Unknown 第 ${row.line} 行沒有讀到有效 OD。`);
+          return;
+        }
+
+        if (!name || Number.isFinite(parseNumericToken(name))) {
+          name = `Unknown ${autoIndex++}`;
+        }
+
+        const usedOds = subtractBlank ? rawOds.map(v => v - blankMean) : rawOds.slice();
+        rows.push({
+          name,
+          rawOds,
+          usedOds,
+          dilution,
+          ...stats(usedOds),
+        });
+      });
+
+      return { rows, errors };
+    }
+
+    function fit4PL(data) {
+      const tiny = 1e-18;
+      const xs = data.map(d => d.x);
+      const ys = data.map(d => d.y);
+      if (data.length < 4) {
+        throw new Error('4PL 至少需要 4 個標準點。');
+      }
+      const uniqueX = [...new Set(xs)];
+      if (uniqueX.length < 4) {
+        throw new Error('4PL 至少需要 4 個不同濃度點。');
+      }
+      const yMin = Math.min(...ys);
+      const yMax = Math.max(...ys);
+      const yRange = Math.max(yMax - yMin, Math.max(Math.abs(yMax), 1) * 1e-6, 1e-6);
+      const posXs = xs.filter(x => x > 0).sort((a, b) => a - b);
+      if (!posXs.length) {
+        throw new Error('至少要有 1 個大於 0 的濃度點。');
+      }
+      const xMinPos = posXs[0];
+      const xMax = posXs[posXs.length - 1];
+      const xMed = median(posXs);
+      const geo = geometricMean(xMinPos, xMax);
+      const corr = pearson(xs.map(v => Math.log10(Math.max(v, xMinPos / 10))), ys);
+      const guessSign = Number.isFinite(corr) && corr < 0 ? -1 : 1;
+
+      function model(x, params) {
+        const { top, bottom, ec50, slope } = params;
+        const xc = Math.max(x, tiny);
+        const logT = slope * (Math.log(xc) - Math.log(ec50));
+        if (logT > 40) return top;
+        if (logT < -40) return bottom;
+        const t = Math.exp(logT);
+        return bottom + ((top - bottom) * t) / (1 + t);
+      }
+
+      function decode(p) {
+        const center = p[0];
+        const span = Math.exp(p[1]);
+        const ec50 = Math.exp(p[2]);
+        const slope = p[3];
+        return {
+          top: center + span,
+          bottom: center - span,
+          ec50,
+          slope,
+        };
+      }
+
+      function objective(p) {
+        const params = decode(p);
+        if (!Number.isFinite(params.ec50) || params.ec50 <= 0 || !Number.isFinite(params.slope)) return 1e30;
+        let sse = 0;
+        for (const d of data) {
+          const pred = model(d.x, params);
+          if (!Number.isFinite(pred)) return 1e30;
+          const residual = d.y - pred;
+          sse += residual * residual;
+        }
+        if (Math.abs(params.slope) < 0.05) sse += 10 * yRange * yRange;
+        return sse;
+      }
+
+      function nelderMead(f, x0, steps, maxIter = 1200, tol = 1e-8) {
+        const n = x0.length;
+        let simplex = [x0.slice()];
+        for (let i = 0; i < n; i++) {
+          const p = x0.slice();
+          p[i] += steps[i];
+          simplex.push(p);
+        }
+        let values = simplex.map(f);
+        const alpha = 1;
+        const gamma = 2;
+        const rho = 0.5;
+        const sigma = 0.5;
+
+        for (let iter = 0; iter < maxIter; iter++) {
+          const ordered = simplex.map((p, i) => ({ p, v: values[i] })).sort((a, b) => a.v - b.v);
+          simplex = ordered.map(o => o.p);
+          values = ordered.map(o => o.v);
+          const best = simplex[0];
+          const worst = simplex[n];
+
+          let size = 0;
+          for (let i = 1; i < simplex.length; i++) {
+            for (let j = 0; j < n; j++) {
+              size = Math.max(size, Math.abs(simplex[i][j] - best[j]));
+            }
+          }
+          const spread = Math.abs(values[n] - values[0]);
+          if (size < tol && spread < tol) break;
+
+          const centroid = Array.from({ length: n }, (_, j) => {
+            let sum = 0;
+            for (let i = 0; i < n; i++) sum += simplex[i][j];
+            return sum / n;
+          });
+
+          const reflected = centroid.map((c, j) => c + alpha * (c - worst[j]));
+          const fRef = f(reflected);
+
+          if (fRef < values[0]) {
+            const expanded = centroid.map((c, j) => c + gamma * (reflected[j] - c));
+            const fExp = f(expanded);
+            if (fExp < fRef) {
+              simplex[n] = expanded;
+              values[n] = fExp;
+            } else {
+              simplex[n] = reflected;
+              values[n] = fRef;
+            }
+            continue;
+          }
+
+          if (fRef < values[n - 1]) {
+            simplex[n] = reflected;
+            values[n] = fRef;
+            continue;
+          }
+
+          let contracted;
+          if (fRef < values[n]) {
+            contracted = centroid.map((c, j) => c + rho * (reflected[j] - c));
+          } else {
+            contracted = centroid.map((c, j) => c + rho * (worst[j] - c));
+          }
+          const fCon = f(contracted);
+
+          if (fCon < Math.min(fRef, values[n])) {
+            simplex[n] = contracted;
+            values[n] = fCon;
+            continue;
+          }
+
+          for (let i = 1; i < simplex.length; i++) {
+            simplex[i] = simplex[i].map((v, j) => best[j] + sigma * (v - best[j]));
+            values[i] = f(simplex[i]);
+          }
+        }
+
+        const ordered = simplex.map((p, i) => ({ p, v: values[i] })).sort((a, b) => a.v - b.v);
+        return ordered[0];
+      }
+
+      const center0 = (yMax + yMin) / 2;
+      const span0 = Math.max((yMax - yMin) / 2, 1e-3);
+      const logEcSeeds = [
+        Math.log(geo),
+        Math.log(xMed),
+        Math.log(percentile(posXs, 0.35)),
+        Math.log(percentile(posXs, 0.65)),
+      ];
+      const slopeSeeds = [guessSign * 1, guessSign * 0.7, guessSign * 1.5, guessSign * 2.5, -guessSign * 1];
+      const centers = [center0, center0 + 0.1 * yRange, center0 - 0.1 * yRange];
+      let best = { v: Infinity, p: null };
+
+      for (const center of centers) {
+        for (const logEc of logEcSeeds) {
+          for (const slope of slopeSeeds) {
+            const x0 = [center, Math.log(span0), logEc, slope];
+            const steps = [0.15 * yRange || 0.1, 0.4, 0.8, 0.5];
+            const result = nelderMead(objective, x0, steps);
+            if (result.v < best.v) best = result;
+          }
+        }
+      }
+
+      const params = decode(best.p);
+      const sse = best.v;
+      const yMean = mean(ys);
+      const sst = ys.reduce((acc, y) => acc + (y - yMean) ** 2, 0);
+      const r2 = sst > 0 ? 1 - (sse / sst) : NaN;
+
+      return {
+        params,
+        sse,
+        r2,
+        model,
+        direction: params.slope >= 0 ? 'increasing' : 'decreasing',
+      };
+    }
+
+    function interpolateX(y, params) {
+      const top = params.top;
+      const bottom = params.bottom;
+      const eps = Math.max(Math.abs(top - bottom) * 1e-9, 1e-12);
+      if (!(y > bottom + eps && y < top - eps)) {
+        return { x: NaN, reason: 'outside-fit' };
+      }
+      const ratio = (y - bottom) / (top - y);
+      if (!(ratio > 0)) {
+        return { x: NaN, reason: 'outside-fit' };
+      }
+      const x = params.ec50 * Math.exp(Math.log(ratio) / params.slope);
+      if (!Number.isFinite(x) || x < 0) {
+        return { x: NaN, reason: 'outside-fit' };
+      }
+      return { x, reason: '' };
+    }
+
+    function classifyUnknown(estimatedX, meanY, fit, stdRange) {
+      const fraction = (meanY - fit.params.bottom) / (fit.params.top - fit.params.bottom);
+      const nearPlatform = fraction < 0.10 || fraction > 0.90;
+      const mediumPlatform = fraction < 0.20 || fraction > 0.80;
+      if (!Number.isFinite(estimatedX)) {
+        return {
+          label: '超出擬合上下限',
+          tone: 'bad',
+          note: '這筆先別硬信，重來。',
+        };
+      }
+      if (estimatedX < stdRange.minPositive) {
+        return {
+          label: '低於最低非零標準',
+          tone: 'warn',
+          note: '這筆先別硬信，重來。低於最低非零標準。',
+        };
+      }
+      if (estimatedX > stdRange.max) {
+        return {
+          label: '高於最高標準',
+          tone: 'warn',
+          note: '這筆先別硬信，重來。超過最高標準。',
+        };
+      }
+      if (nearPlatform) {
+        return {
+          label: '靠近平台',
+          tone: 'warn',
+          note: '靠近上下平台，先保守看。',
+        };
+      }
+      if (mediumPlatform) {
+        return {
+          label: '在範圍內（偏平台）',
+          tone: 'soft',
+          note: '可用，但位置比較靠平台。',
+        };
+      }
+      return {
+        label: '在範圍內',
+        tone: 'ok',
+        note: '落在比較舒服的中段。',
+      };
+    }
+
+    function renderMetrics(result, unit) {
+      if (!result) {
+        els.metricTop.textContent = '—';
+        els.metricBottom.textContent = '—';
+        els.metricEC50.textContent = '—';
+        els.metricSlope.textContent = '—';
+        els.metricR2.textContent = '—';
+        els.metricDirection.textContent = '尚未擬合';
+        els.fitNote.textContent = '先把資料貼進去，我會把標準點和 4PL curve 一起拉出來。';
+        return;
+      }
+      els.metricTop.textContent = formatNumber(result.params.top);
+      els.metricBottom.textContent = formatNumber(result.params.bottom);
+      els.metricEC50.textContent = formatNumber(result.params.ec50);
+      els.metricSlope.textContent = formatNumber(result.params.slope);
+      els.metricR2.textContent = formatNumber(result.r2, 4);
+      els.metricDirection.textContent = result.direction === 'increasing'
+        ? 'increasing · 濃度越高，訊號越高'
+        : 'decreasing · 濃度越高，訊號越低';
+      els.fitNote.textContent = `Equation（X 用濃度）：Y = Bottom + (X^HillSlope) × (Top - Bottom) / (X^HillSlope + EC50^HillSlope)。目前 EC50 與濃度單位一起顯示為 ${unit || '同輸入單位'}。`;
+    }
+
+    function renderStandardsTable(standards, fit) {
+      if (!standards.length) {
+        els.standardsTable.innerHTML = '<tr><td colspan="7" class="muted">還沒有資料。</td></tr>';
+        return;
+      }
+      const rows = standards.map(row => {
+        const predicted = fit ? fit.model(row.concentration, fit.params) : NaN;
+        const residual = Number.isFinite(predicted) ? row.mean - predicted : NaN;
+        return `
+          <tr>
+            <td>${escapeHtml(formatNumber(row.concentration))}</td>
+            <td>${row.n}</td>
+            <td>${escapeHtml(formatNumber(row.mean))}</td>
+            <td>${escapeHtml(formatNumber(row.sd))}</td>
+            <td>${escapeHtml(formatPercent(row.cv))}</td>
+            <td><code>${escapeHtml(row.usedOds.map(v => formatNumber(v)).join(', '))}</code></td>
+            <td>${escapeHtml(formatNumber(residual))}</td>
+          </tr>
+        `;
+      }).join('');
+      els.standardsTable.innerHTML = rows;
+    }
+
+    function renderUnknownTable(results, unit) {
+      if (!results.length) {
+        els.unknownTable.innerHTML = '<tr><td colspan="8" class="muted">還沒有資料。</td></tr>';
+        return;
+      }
+      const rows = results.map(row => {
+        const est = Number.isFinite(row.estimated) ? `${formatNumber(row.estimated)} ${escapeHtml(unit)}` : '—';
+        const corrected = Number.isFinite(row.corrected) ? `${formatNumber(row.corrected)} ${escapeHtml(unit)}` : '—';
+        const note = `<span class="pill ${row.classification.tone}">${escapeHtml(row.classification.label)}</span><div class="inline-note">${escapeHtml(row.classification.note)}</div>`;
+        return `
+          <tr>
+            <td>${escapeHtml(row.name)}</td>
+            <td>${row.n}</td>
+            <td>${escapeHtml(formatNumber(row.mean))}</td>
+            <td>${escapeHtml(formatNumber(row.sd))}</td>
+            <td>${escapeHtml(formatPercent(row.cv))}</td>
+            <td>${est}</td>
+            <td>${corrected}${row.dilution !== 1 ? `<div class="inline-note">× ${escapeHtml(formatNumber(row.dilution))}</div>` : ''}</td>
+            <td>${note}</td>
+          </tr>
+        `;
+      }).join('');
+      els.unknownTable.innerHTML = rows;
+    }
+
+    function createSvg(tag, attrs = {}) {
+      const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        node.setAttribute(key, String(value));
+      }
+      return node;
+    }
+
+    function drawEmptyChart(message = '還沒開始，我在。') {
+      const svg = els.curveSvg;
+      svg.innerHTML = '';
+      if (els.chartMeta) els.chartMeta.classList.add('hidden');
+      if (els.chartR2) els.chartR2.textContent = '—';
+      const defs = createSvg('defs');
+      const grad = createSvg('linearGradient', { id: 'emptyGlow', x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
+      grad.appendChild(createSvg('stop', { offset: '0%', 'stop-color': 'rgba(124,167,255,0.26)' }));
+      grad.appendChild(createSvg('stop', { offset: '100%', 'stop-color': 'rgba(124,167,255,0.02)' }));
+      defs.appendChild(grad);
+      svg.appendChild(defs);
+      svg.appendChild(createSvg('rect', { x: 0, y: 0, width: 900, height: 430, fill: 'url(#emptyGlow)' }));
+      svg.appendChild(createSvg('circle', { cx: 450, cy: 164, r: 48, fill: 'rgba(78,124,255,0.08)' }));
+      svg.appendChild(createSvg('circle', { cx: 450, cy: 164, r: 22, fill: 'rgba(78,124,255,0.28)' }));
+      svg.appendChild(createSvg('circle', { cx: 450, cy: 164, r: 8, fill: 'rgba(78,124,255,0.95)' }));
+      const text = createSvg('text', {
+        x: 450,
+        y: 262,
+        'text-anchor': 'middle',
+        fill: '#4b5b79',
+        'font-size': 22,
+        'font-weight': 700,
+        'font-family': 'Inter, Noto Sans TC, sans-serif'
+      });
+      text.textContent = message;
+      svg.appendChild(text);
+      const sub = createSvg('text', {
+        x: 450,
+        y: 295,
+        'text-anchor': 'middle',
+        fill: '#7283a2',
+        'font-size': 13,
+        'font-family': 'Inter, Noto Sans TC, sans-serif'
+      });
+      sub.textContent = '把標準品貼進來，我就把 curve 拉給妳。';
+      svg.appendChild(sub);
+    }
+
+    function drawChart(standards, fit, unknownResults, unit) {
+      const svg = els.curveSvg;
+      svg.innerHTML = '';
+      if (els.chartMeta) els.chartMeta.classList.remove('hidden');
+      if (els.chartR2) els.chartR2.textContent = formatNumber(fit.r2, 4);
+      const width = 900;
+      const height = 430;
+      const margin = { top: 28, right: 34, bottom: 68, left: 86 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+
+      const stdXs = standards.map(s => s.concentration);
+      const posStdXs = stdXs.filter(x => x > 0);
+      const xMinPositive = Math.min(...posStdXs);
+      const pseudoZero = xMinPositive / 3;
+      const estimatedXs = unknownResults.map(r => r.estimated).filter(v => Number.isFinite(v) && v > 0);
+      const xAllPositive = posStdXs.concat(estimatedXs.length ? estimatedXs : []);
+      const xMin = Math.min(...xAllPositive, pseudoZero);
+      const xMax = Math.max(...xAllPositive, xMinPositive) * 1.45;
+      const yValues = [fit.params.bottom, fit.params.top].concat(standards.map(s => s.mean));
+      const yMin = Math.min(...yValues);
+      const yMax = Math.max(...yValues);
+      const yPad = Math.max((yMax - yMin) * 0.14, 0.08);
+      const plotYMin = yMin - yPad;
+      const plotYMax = yMax + yPad;
+      const logMin = Math.log10(xMin);
+      const logMax = Math.log10(xMax);
+      const hasZeroStandard = stdXs.some(x => x === 0);
+
+      const xScale = (x) => {
+        const safe = x > 0 ? x : pseudoZero;
+        return margin.left + ((Math.log10(safe) - logMin) / (logMax - logMin)) * innerW;
+      };
+      const yScale = (y) => margin.top + (1 - (y - plotYMin) / (plotYMax - plotYMin)) * innerH;
+
+      const defs = createSvg('defs');
+      const grad = createSvg('linearGradient', { id: 'curveStroke', x1: '0%', y1: '0%', x2: '100%', y2: '0%' });
+      grad.appendChild(createSvg('stop', { offset: '0%', 'stop-color': '#7ca7ff' }));
+      grad.appendChild(createSvg('stop', { offset: '100%', 'stop-color': '#406fe8' }));
+      defs.appendChild(grad);
+
+      const glow = createSvg('filter', { id: 'blueGlow', x: '-40%', y: '-40%', width: '180%', height: '180%' });
+      glow.appendChild(createSvg('feGaussianBlur', { stdDeviation: '6', result: 'blur' }));
+      defs.appendChild(glow);
+      svg.appendChild(defs);
+
+      svg.appendChild(createSvg('rect', { x: 0, y: 0, width, height, fill: 'rgba(255,255,255,0.0)' }));
+
+      const gridGroup = createSvg('g');
+      const yTickCount = 5;
+      for (let i = 0; i <= yTickCount; i++) {
+        const value = plotYMin + ((plotYMax - plotYMin) / yTickCount) * i;
+        const y = yScale(value);
+        gridGroup.appendChild(createSvg('line', {
+          x1: margin.left,
+          y1: y,
+          x2: width - margin.right,
+          y2: y,
+          stroke: 'rgba(122, 143, 181, 0.18)',
+          'stroke-width': 1,
+        }));
+        const label = createSvg('text', {
+          x: margin.left - 12,
+          y: y + 4,
+          'text-anchor': 'end',
+          fill: '#6d7d99',
+          'font-size': 12,
+          'font-family': 'Inter, Noto Sans TC, sans-serif'
+        });
+        label.textContent = formatNumber(value);
+        gridGroup.appendChild(label);
+      }
+
+      const tickLogs = [];
+      for (let p = Math.floor(logMin); p <= Math.ceil(logMax); p++) {
+        tickLogs.push(p);
+      }
+      for (const p of tickLogs) {
+        const value = 10 ** p;
+        const x = xScale(value);
+        if (x < margin.left - 1 || x > width - margin.right + 1) continue;
+        gridGroup.appendChild(createSvg('line', {
+          x1: x,
+          y1: margin.top,
+          x2: x,
+          y2: height - margin.bottom,
+          stroke: 'rgba(122, 143, 181, 0.12)',
+          'stroke-width': 1,
+        }));
+        const label = createSvg('text', {
+          x,
+          y: height - margin.bottom + 24,
+          'text-anchor': 'middle',
+          fill: '#6d7d99',
+          'font-size': 12,
+          'font-family': 'Inter, Noto Sans TC, sans-serif'
+        });
+        label.textContent = formatNumber(value, 2);
+        gridGroup.appendChild(label);
+      }
+
+      if (hasZeroStandard) {
+        const x0 = xScale(0);
+        gridGroup.appendChild(createSvg('line', {
+          x1: x0,
+          y1: margin.top,
+          x2: x0,
+          y2: height - margin.bottom,
+          stroke: 'rgba(122, 143, 181, 0.12)',
+          'stroke-width': 1,
+          'stroke-dasharray': '3 4'
+        }));
+        const label = createSvg('text', {
+          x: x0,
+          y: height - margin.bottom + 24,
+          'text-anchor': 'middle',
+          fill: '#6d7d99',
+          'font-size': 12,
+          'font-family': 'Inter, Noto Sans TC, sans-serif'
+        });
+        label.textContent = '0*';
+        gridGroup.appendChild(label);
+      }
+
+      svg.appendChild(gridGroup);
+
+      svg.appendChild(createSvg('line', {
+        x1: margin.left,
+        y1: height - margin.bottom,
+        x2: width - margin.right,
+        y2: height - margin.bottom,
+        stroke: '#9db0d8',
+        'stroke-width': 1.4,
+      }));
+      svg.appendChild(createSvg('line', {
+        x1: margin.left,
+        y1: margin.top,
+        x2: margin.left,
+        y2: height - margin.bottom,
+        stroke: '#9db0d8',
+        'stroke-width': 1.4,
+      }));
+
+      const xLabel = createSvg('text', {
+        x: margin.left + innerW / 2,
+        y: height - 18,
+        'text-anchor': 'middle',
+        fill: '#5f6f8d',
+        'font-size': 13,
+        'font-family': 'Inter, Noto Sans TC, sans-serif'
+      });
+      xLabel.textContent = `Concentration (${unit || 'same unit'})`;
+      svg.appendChild(xLabel);
+
+      const yLabel = createSvg('text', {
+        x: 18,
+        y: margin.top + innerH / 2,
+        transform: `rotate(-90 18 ${margin.top + innerH / 2})`,
+        'text-anchor': 'middle',
+        fill: '#5f6f8d',
+        'font-size': 13,
+        'font-family': 'Inter, Noto Sans TC, sans-serif'
+      });
+      yLabel.textContent = 'OD / Response';
+      svg.appendChild(yLabel);
+
+      const curveGlowPath = createSvg('path', {
+        fill: 'none',
+        stroke: '#7ca7ff',
+        'stroke-width': 10,
+        'stroke-linecap': 'round',
+        opacity: 0.18,
+        filter: 'url(#blueGlow)'
+      });
+      const curvePath = createSvg('path', {
+        fill: 'none',
+        stroke: 'url(#curveStroke)',
+        'stroke-width': 3.2,
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round'
+      });
+
+      const sampleCount = 260;
+      let path = '';
+      for (let i = 0; i < sampleCount; i++) {
+        const t = i / (sampleCount - 1);
+        const lx = logMin + (logMax - logMin) * t;
+        const x = 10 ** lx;
+        const y = fit.model(x, fit.params);
+        const px = xScale(x);
+        const py = yScale(y);
+        path += `${i === 0 ? 'M' : 'L'} ${px} ${py} `;
+      }
+      curveGlowPath.setAttribute('d', path.trim());
+      curvePath.setAttribute('d', path.trim());
+      svg.appendChild(curveGlowPath);
+      svg.appendChild(curvePath);
+
+      const lowLineY = yScale(fit.params.bottom + (fit.params.top - fit.params.bottom) * 0.10);
+      const highLineY = yScale(fit.params.bottom + (fit.params.top - fit.params.bottom) * 0.90);
+      [lowLineY, highLineY].forEach((y) => {
+        svg.appendChild(createSvg('line', {
+          x1: margin.left,
+          y1: y,
+          x2: width - margin.right,
+          y2: y,
+          stroke: 'rgba(149,99,25,0.22)',
+          'stroke-width': 1,
+          'stroke-dasharray': '5 5'
+        }));
+      });
+
+      const stdGroup = createSvg('g');
+      for (const s of standards) {
+        const px = xScale(s.concentration);
+        const py = yScale(s.mean);
+        stdGroup.appendChild(createSvg('circle', {
+          cx: px,
+          cy: py,
+          r: 6.8,
+          fill: '#ffffff',
+          stroke: '#3553a5',
+          'stroke-width': 2.4
+        }));
+        stdGroup.appendChild(createSvg('circle', {
+          cx: px,
+          cy: py,
+          r: 2.6,
+          fill: '#4e7cff'
+        }));
+      }
+      svg.appendChild(stdGroup);
+
+      const labelGroup = createSvg('g');
+      standards.forEach((s, index) => {
+        const px = xScale(s.concentration);
+        const py = yScale(s.mean);
+        const labelText = s.concentration === 0 ? '0' : formatNumber(s.concentration);
+
+        const forceBelow = py < margin.top + 32;
+        const placeBelow = forceBelow || (index % 2 === 1 && py < height - margin.bottom - 26);
+        const bubbleY = placeBelow ? py + 12 : py - 28;
+        const textWidth = Math.max(28, labelText.length * 7 + 14);
+
+        labelGroup.appendChild(createSvg('line', {
+          x1: px,
+          y1: placeBelow ? py + 7 : py - 7,
+          x2: px,
+          y2: placeBelow ? bubbleY : bubbleY + 18,
+          stroke: 'rgba(78,124,255,0.18)',
+          'stroke-width': 1
+        }));
+        labelGroup.appendChild(createSvg('rect', {
+          x: px - textWidth / 2,
+          y: bubbleY,
+          width: textWidth,
+          height: 18,
+          rx: 9,
+          fill: 'rgba(255,255,255,0.94)',
+          stroke: 'rgba(78,124,255,0.22)'
+        }));
+        const label = createSvg('text', {
+          x: px,
+          y: bubbleY + 12.3,
+          'text-anchor': 'middle',
+          fill: '#3553a5',
+          'font-size': 11.2,
+          'font-weight': 700,
+          'font-family': 'Inter, Noto Sans TC, sans-serif'
+        });
+        label.textContent = labelText;
+        labelGroup.appendChild(label);
+      });
+      svg.appendChild(labelGroup);
+
+    }
+
+    function exportCsv() {
+      if (!lastAnalysis) return;
+      const unit = getUnitText();
+      const assayName = els.assayName.value.trim() || 'ELISA_4PL';
+      const lines = [];
+      lines.push(['Section', 'Field', 'Value']);
+      lines.push(['Meta', 'Assay', assayName]);
+      lines.push(['Meta', 'Unit', unit]);
+      lines.push(['Meta', 'Blank mean', formatNumber(lastAnalysis.blankMean)]);
+      lines.push(['Meta', 'Subtract blank', els.subtractBlank.checked ? 'Yes' : 'No']);
+      lines.push(['Fit', 'Top', lastAnalysis.fit.params.top]);
+      lines.push(['Fit', 'Bottom', lastAnalysis.fit.params.bottom]);
+      lines.push(['Fit', 'EC50', lastAnalysis.fit.params.ec50]);
+      lines.push(['Fit', 'Hill slope', lastAnalysis.fit.params.slope]);
+      lines.push(['Fit', 'R2', lastAnalysis.fit.r2]);
+      lines.push([]);
+      lines.push(['Standards']);
+      lines.push(['Concentration', 'n', 'Mean OD', 'SD', 'CV%', 'Residual']);
+      lastAnalysis.standards.forEach((row) => {
+        lines.push([row.concentration, row.n, row.mean, row.sd, row.cv, row.residual]);
+      });
+      lines.push([]);
+      lines.push(['Unknown']);
+      lines.push(['Sample', 'n', 'Mean OD', 'SD', 'CV%', 'Estimated concentration', 'Dilution', 'Dilution corrected', 'Status']);
+      lastAnalysis.unknownResults.forEach((row) => {
+        lines.push([
+          row.name,
+          row.n,
+          row.mean,
+          row.sd,
+          row.cv,
+          row.estimated,
+          row.dilution,
+          row.corrected,
+          row.classification.label,
+        ]);
+      });
+
+      const csv = lines.map((row) => row.map((value) => {
+        if (value == null) return '';
+        const str = String(value);
+        if (/[",\n]/.test(str)) return '"' + str.replace(/"/g, '""') + '"';
+        return str;
+      }).join(',')).join('\r\n');
+
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      a.href = url;
+      a.download = `${assayName.replace(/[^\w\-]+/g, '_') || 'ELISA_4PL'}_${stamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function analyze() {
+      clearStatus();
+      els.exportBtn.disabled = true;
+
+      const blankValues = parseNumberList(els.blankInput.value);
+      const blankMean = blankValues.length ? mean(blankValues) : 0;
+      const subtractBlank = els.subtractBlank.checked;
+      const defaultDilution = Number(els.dilutionInput.value || 1);
+      const unit = getUnitText();
+
+      if (!Number.isFinite(defaultDilution) || defaultDilution <= 0) {
+        setStatus('error', 'Unknown 預設稀釋倍數要大於 0。');
+        setLexNote('這筆先別硬信，重來。');
+        return;
+      }
+
+      const standardsParsed = parseStandards(els.standardsInput.value, blankMean, subtractBlank);
+      const unknownParsed = parseUnknowns(els.unknownInput.value, blankMean, subtractBlank, defaultDilution);
+      const errors = [...standardsParsed.errors, ...unknownParsed.errors];
+
+      if (errors.length) {
+        setStatus('error', errors.join('\n'));
+        renderMetrics(null, unit);
+        renderStandardsTable([], null);
+        renderUnknownTable([], unit);
+        drawEmptyChart('先把資料整理乾淨。');
+        els.curveModePill.textContent = '資料需要修一下';
+        els.chartFootnote.textContent = '';
+        setLexNote('這筆先別硬信，重來。');
+        return;
+      }
+
+      if (!standardsParsed.rows.length) {
+        setStatus('error', '還沒有標準品資料。');
+        setLexNote('還沒開始，我在。');
+        return;
+      }
+
+      let fit;
+      try {
+        fit = fit4PL(standardsParsed.rows.map(row => ({ x: row.concentration, y: row.mean })));
+      } catch (error) {
+        setStatus('error', error.message || '4PL 擬合失敗。');
+        renderMetrics(null, unit);
+        renderStandardsTable(standardsParsed.rows, null);
+        renderUnknownTable([], unit);
+        drawEmptyChart('我先陪妳把這條線理順。');
+        els.curveModePill.textContent = '擬合失敗';
+        els.chartFootnote.textContent = '';
+        setLexNote('這筆先別硬信，重來。');
+        return;
+      }
+
+      const minPositive = Math.min(...standardsParsed.rows.filter(r => r.concentration > 0).map(r => r.concentration));
+      const maxStandard = Math.max(...standardsParsed.rows.map(r => r.concentration));
+      const stdRange = { minPositive, max: maxStandard };
+
+      const standards = standardsParsed.rows.map(row => {
+        const predicted = fit.model(row.concentration, fit.params);
+        return {
+          ...row,
+          predicted,
+          residual: row.mean - predicted,
+        };
+      });
+
+      const unknownResults = unknownParsed.rows.map(row => {
+        const interpolated = interpolateX(row.mean, fit.params);
+        const estimated = interpolated.x;
+        const corrected = Number.isFinite(estimated) ? estimated * row.dilution : NaN;
+        const classification = classifyUnknown(estimated, row.mean, fit, stdRange);
+        return {
+          ...row,
+          estimated,
+          corrected,
+          classification,
+        };
+      });
+
+      const warningCount = unknownResults.filter(r => r.classification.tone === 'warn' || r.classification.tone === 'bad').length;
+      const poorFit = Number.isFinite(fit.r2) ? fit.r2 < 0.98 : false;
+
+      renderMetrics(fit, unit);
+      renderStandardsTable(standards, fit);
+      renderUnknownTable(unknownResults, unit);
+      drawChart(standards, fit, unknownResults, unit);
+      els.exportBtn.disabled = false;
+      els.curveModePill.textContent = fit.direction === 'increasing' ? '4PL · increasing' : '4PL · decreasing';
+      els.chartFootnote.textContent = (standards.some(s => s.concentration === 0)
+        ? '* 0 濃度點在圖上用 pseudo-log 方式放在最左邊，只是為了顯示；擬合仍使用濃度型 4PL。 '
+        : '') + '虛線代表 response dynamic range 的 10% / 90%，只是幫妳快速看樣本有沒有太靠近平台。';
+
+      if (poorFit) {
+        setStatus('info', `R² = ${formatNumber(fit.r2, 4)}，這條 fit 沒有很漂亮；我會先保守看待這筆。`);
+        setLexNote('這筆先別硬信，重來。');
+      } else if (warningCount > 0) {
+        setStatus('info', `已跑完 4PL，但有 ${warningCount} 筆 unknown 需要保守判讀。`);
+        setLexNote('今天也陪妳把它拉出來了。');
+      } else {
+        setStatus('info', `4PL 已完成。Blank mean = ${formatNumber(blankMean)}；Unknown 已一起回推。`);
+        setLexNote('今天也陪妳把它拉出來了。');
+      }
+
+      lastAnalysis = {
+        blankMean,
+        fit,
+        standards,
+        unknownResults,
+      };
+    }
+
+    function installSmartPaste(textarea, label) {
+      textarea.addEventListener('paste', (event) => {
+        const pasted = event.clipboardData?.getData('text/plain');
+        if (!pasted) return;
+        const cleaned = normalizePasteForTextarea(pasted);
+        if (!cleaned) return;
+        event.preventDefault();
+        const start = textarea.selectionStart ?? textarea.value.length;
+        const end = textarea.selectionEnd ?? textarea.value.length;
+        const needsLeadingBreak = start > 0 && textarea.value[start - 1] !== '\n';
+        const needsTrailingBreak = end < textarea.value.length && textarea.value[end] !== '\n';
+        textarea.setRangeText(
+          (needsLeadingBreak ? '\n' : '') + cleaned + (needsTrailingBreak ? '\n' : ''),
+          start,
+          end,
+          'end'
+        );
+        setStatus('info', `${label} 貼上格式已整理；逗號後面的空格不用妳手動刪。`);
+        setLexNote('貼上格式我幫妳收好了。');
+      });
+    }
+
+    installSmartPaste(els.standardsInput, '標準品資料');
+    installSmartPaste(els.unknownInput, 'Unknown 資料');
+
+    els.exampleBtn.addEventListener('click', () => {
+      els.assayName.value = els.assayName.value || 'Demo ELISA';
+      els.blankInput.value = '0.048, 0.050, 0.047';
+      els.standardsInput.value = exampleStandards;
+      els.unknownInput.value = exampleUnknowns;
+      analyze();
+    });
+
+    els.clearBtn.addEventListener('click', () => {
+      els.assayName.value = '';
+      els.blankInput.value = '';
+      els.dilutionInput.value = '1';
+      els.standardsInput.value = '';
+      els.unknownInput.value = '';
+      clearStatus();
+      renderMetrics(null, getUnitText());
+      renderStandardsTable([], null);
+      renderUnknownTable([], getUnitText());
+      drawEmptyChart('還沒開始，我在。');
+      els.curveModePill.textContent = '等待資料';
+      els.chartFootnote.textContent = '';
+      setLexNote('還沒開始，我在。');
+      lastAnalysis = null;
+      els.exportBtn.disabled = true;
+    });
+
+    els.analyzeBtn.addEventListener('click', analyze);
+    els.exportBtn.addEventListener('click', exportCsv);
+
+    [els.massUnitSelect, els.volumeUnitSelect, els.precisionSelect].forEach((el) => {
+      el.addEventListener('change', () => {
+        if (lastAnalysis) {
+          renderMetrics(lastAnalysis.fit, getUnitText());
+          renderStandardsTable(lastAnalysis.standards, lastAnalysis.fit);
+          renderUnknownTable(lastAnalysis.unknownResults, getUnitText());
+          drawChart(lastAnalysis.standards, lastAnalysis.fit, lastAnalysis.unknownResults, getUnitText());
+        } else {
+          drawEmptyChart('還沒開始，我在。');
+        }
+      });
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        analyze();
+      }
+    });
+
+    drawEmptyChart('還沒開始，我在。');
+    renderMetrics(null, getUnitText());
+  </script>
+</body>
+</html>
